@@ -269,4 +269,110 @@ Would you like a **custom script** or tool that:
 3. **Tests for SSRF**
 
 Let me know — I can build it in Bash or Python for you.
+Perfect! Here's a **Bash script** that automates **Google Dorking for SSRF**, fetches URLs using `googler`, and filters out potential SSRF-prone links using common vulnerable parameters.
+
+---
+
+## 🛠️ Requirements
+
+* `googler` – Google search from the terminal
+* `grep`, `awk`, `cut` – basic Linux tools
+* `tee` – to log output
+
+### 🔧 Install `googler` (if not already installed)
+
+```bash
+sudo apt install googler -y
+```
+
+---
+
+## ✅ SSRF Dorking Bash Script
+
+Save the script below as `ssrf_dorker.sh`:
+
+```bash
+#!/bin/bash
+
+# File: ssrf_dorker.sh
+# Description: Automatically dork for SSRF using Googler
+
+# Parameters to look for in URLs (you can expand this list)
+params=("url=" "uri=" "redirect=" "next=" "data=" "file=" "img_url=" "image=" "link=" "host=" "src=" "target=")
+
+# Wordlist of dork patterns
+dorks=(
+'inurl:"url="'
+'inurl:"uri="'
+'inurl:"redirect="'
+'inurl:"next="'
+'inurl:"data="'
+'inurl:"file="'
+'inurl:"img_url="'
+'inurl:"image="'
+'inurl:"link="'
+'inurl:"host="'
+'inurl:"src="'
+'inurl:"target="'
+)
+
+# Output file
+output_file="ssrf_dorks_results.txt"
+> "$output_file"
+
+echo "[*] Starting SSRF Dorking with Googler..."
+echo "[*] Output saved to $output_file"
+
+# Loop through dork list
+for dork in "${dorks[@]}"; do
+    echo "[+] Searching: $dork"
+    
+    # Use googler to fetch results and filter actual URLs
+    googler --noprompt -n 20 "$dork" | grep -Eo 'https?://[^ ]+' | grep -v 'google' | tee -a "$output_file"
+    
+    sleep 1  # Be nice to Google
+done
+
+echo "[✓] Dorking completed."
+echo "[!] Now manually or automatically test URLs in $output_file for SSRF using curl or ffuf."
+```
+
+---
+
+## ▶️ Run the Script
+
+```bash
+chmod +x ssrf_dorker.sh
+./ssrf_dorker.sh
+```
+
+---
+
+## 🔄 Follow-Up: Test the URLs
+
+You can pipe the output into `ffuf`, `curl`, or Burp Suite for actual SSRF testing.
+
+### Example with `curl` and loop:
+
+```bash
+while read url; do
+  echo "[*] Testing $url"
+  curl -s -o /dev/null "$url" --max-time 5
+done < ssrf_dorks_results.txt
+```
+
+---
+
+## 💡 Optional: Add DNS Logging for Blind SSRF Detection
+
+Replace URLs with payloads like:
+
+```
+http://your-collaborator-id.burpcollaborator.net
+http://your-subdomain.oast.me
+```
+
+---
+
+Want me to upgrade this into a **Python tool with threading**, **auto-exploitation**, or **Burp integration**? Just ask.
 
